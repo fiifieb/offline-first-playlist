@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct offline_first_playlistApp: App {
+    private let environment = AppEnvironment.live()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppCompositionRoot(environment: environment)
         }
     }
 }
