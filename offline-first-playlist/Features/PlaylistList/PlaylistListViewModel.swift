@@ -7,9 +7,12 @@ final class PlaylistListViewModel: ObservableObject {
     @Published var deletedPlaylists: [Playlist] = []
     @Published var newPlaylistName = ""
     @Published var isPresentingCreateSheet = false
+    @Published var renamePlaylistName = ""
+    @Published var isPresentingRenameSheet = false
     @Published var errorMessage: String?
 
     private let repository: any PlaylistRepository
+    private var editingPlaylistID: UUID?
 
     init(repository: any PlaylistRepository) {
         self.repository = repository
@@ -38,6 +41,29 @@ final class PlaylistListViewModel: ObservableObject {
             await load()
         } catch {
             errorMessage = "Failed to create playlist."
+        }
+    }
+
+    func beginRename(playlist: Playlist) {
+        editingPlaylistID = playlist.id
+        renamePlaylistName = playlist.name
+        isPresentingRenameSheet = true
+    }
+
+    func renamePlaylist() async {
+        guard let editingPlaylistID else { return }
+
+        let trimmedName = renamePlaylistName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+
+        do {
+            _ = try await repository.renamePlaylist(id: editingPlaylistID, name: trimmedName)
+            renamePlaylistName = ""
+            isPresentingRenameSheet = false
+            self.editingPlaylistID = nil
+            await load()
+        } catch {
+            errorMessage = "Failed to rename playlist."
         }
     }
 

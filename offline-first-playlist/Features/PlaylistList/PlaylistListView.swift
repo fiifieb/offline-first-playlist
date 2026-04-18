@@ -20,6 +20,10 @@ struct PlaylistListView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
+                                Button("Edit") {
+                                    viewModel.beginRename(playlist: playlist)
+                                }
+                                .buttonStyle(.borderless)
                                 Button("Delete") {
                                     Task { await viewModel.softDeletePlaylist(id: playlist.id) }
                                 }
@@ -79,6 +83,27 @@ struct PlaylistListView: View {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Save") {
                                 Task { await viewModel.createPlaylist() }
+                            }
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $viewModel.isPresentingRenameSheet) {
+                NavigationStack {
+                    Form {
+                        TextField("Playlist name", text: $viewModel.renamePlaylistName)
+                    }
+                    .navigationTitle("Rename Playlist")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                viewModel.isPresentingRenameSheet = false
+                                viewModel.renamePlaylistName = ""
+                            }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Save") {
+                                Task { await viewModel.renamePlaylist() }
                             }
                         }
                     }

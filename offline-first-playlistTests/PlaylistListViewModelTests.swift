@@ -88,6 +88,49 @@ final class PlaylistListViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.activePlaylists.count, 1)
         XCTAssertEqual(viewModel.activePlaylists.first?.id, playlist.id)
     }
+
+    func testBeginRenamePrefillsAndShowsRenameSheet() async throws {
+        let playlist = Playlist(
+            id: UUID(),
+            name: "Evening Mix",
+            isDeleted: false,
+            createdAt: Date(),
+            updatedAt: Date(),
+            syncState: .pending
+        )
+
+        let repository = FakePlaylistRepository(active: [playlist], deleted: [])
+        let viewModel = PlaylistListViewModel(repository: repository)
+
+        viewModel.beginRename(playlist: playlist)
+
+        XCTAssertTrue(viewModel.isPresentingRenameSheet)
+        XCTAssertEqual(viewModel.renamePlaylistName, "Evening Mix")
+    }
+
+    func testRenamePlaylistUpdatesNameAndDismissesSheet() async throws {
+        let playlist = Playlist(
+            id: UUID(),
+            name: "Old Name",
+            isDeleted: false,
+            createdAt: Date(),
+            updatedAt: Date(),
+            syncState: .pending
+        )
+
+        let repository = FakePlaylistRepository(active: [playlist], deleted: [])
+        let viewModel = PlaylistListViewModel(repository: repository)
+
+        await viewModel.load()
+        viewModel.beginRename(playlist: playlist)
+        viewModel.renamePlaylistName = "  New Name  "
+
+        await viewModel.renamePlaylist()
+
+        XCTAssertEqual(viewModel.activePlaylists.first?.name, "New Name")
+        XCTAssertFalse(viewModel.isPresentingRenameSheet)
+        XCTAssertEqual(viewModel.renamePlaylistName, "")
+    }
 }
 
 private final class FakePlaylistRepository: PlaylistRepository {
