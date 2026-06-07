@@ -59,6 +59,13 @@ actor InMemoryPlaylistRepository: PlaylistRepository {
         storage[id] = playlist
     }
 
+    func setSyncState(id: UUID, syncState: SyncState) async throws {
+        var playlist = try getPlaylist(id: id)
+        playlist.syncState = syncState
+        playlist.updatedAt = Date()
+        storage[id] = playlist
+    }
+
     private func getPlaylist(id: UUID) throws -> Playlist {
         guard let playlist = storage[id] else {
             throw RepositoryError.playlistNotFound

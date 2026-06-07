@@ -7,4 +7,9 @@ protocol PlaylistRepository {
     func renamePlaylist(id: UUID, name: String) async throws -> Playlist
     func softDeletePlaylist(id: UUID) async throws
     func restorePlaylist(id: UUID) async throws
+    func setSyncState(id: UUID, syncState: SyncState) async throws
+}
+
+extension PlaylistRepository {
+    func setSyncState(id _: UUID, syncState _: SyncState) async throws {}
 }

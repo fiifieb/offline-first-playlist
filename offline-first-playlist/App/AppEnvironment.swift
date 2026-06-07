@@ -2,13 +2,22 @@ import Foundation
 
 struct AppEnvironment {
     let playlistRepository: any PlaylistRepository
+    let syncEngine: any PlaylistSyncEngine
 
     static func live() -> AppEnvironment {
         do {
             let stack = try CoreDataStack(storeURL: persistentStoreURL())
-            return AppEnvironment(playlistRepository: CoreDataPlaylistRepository(context: stack.viewContext))
+            let repository = CoreDataPlaylistRepository(context: stack.viewContext)
+            return AppEnvironment(
+                playlistRepository: repository,
+                syncEngine: MockPlaylistSyncEngine(repository: repository)
+            )
         } catch {
-            return AppEnvironment(playlistRepository: InMemoryPlaylistRepository())
+            let repository = InMemoryPlaylistRepository()
+            return AppEnvironment(
+                playlistRepository: repository,
+                syncEngine: MockPlaylistSyncEngine(repository: repository)
+            )
         }
     }
 

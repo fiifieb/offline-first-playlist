@@ -23,7 +23,7 @@ final class PlaylistListViewModelTests: XCTestCase {
         )
 
         let repository = FakePlaylistRepository(active: [active], deleted: [deleted])
-        let viewModel = PlaylistListViewModel(repository: repository)
+        let viewModel = PlaylistListViewModel(repository: repository, syncEngine: FakePlaylistSyncEngine())
 
         await viewModel.load()
 
@@ -35,7 +35,7 @@ final class PlaylistListViewModelTests: XCTestCase {
 
     func testCreatePlaylistCreatesAndReloads() async throws {
         let repository = FakePlaylistRepository(active: [], deleted: [])
-        let viewModel = PlaylistListViewModel(repository: repository)
+        let viewModel = PlaylistListViewModel(repository: repository, syncEngine: FakePlaylistSyncEngine())
         viewModel.isPresentingCreateSheet = true
         viewModel.newPlaylistName = "  Chill Mix  "
 
@@ -58,7 +58,7 @@ final class PlaylistListViewModelTests: XCTestCase {
         )
 
         let repository = FakePlaylistRepository(active: [playlist], deleted: [])
-        let viewModel = PlaylistListViewModel(repository: repository)
+        let viewModel = PlaylistListViewModel(repository: repository, syncEngine: FakePlaylistSyncEngine())
 
         await viewModel.load()
         await viewModel.softDeletePlaylist(id: playlist.id)
@@ -79,7 +79,7 @@ final class PlaylistListViewModelTests: XCTestCase {
         )
 
         let repository = FakePlaylistRepository(active: [], deleted: [playlist])
-        let viewModel = PlaylistListViewModel(repository: repository)
+        let viewModel = PlaylistListViewModel(repository: repository, syncEngine: FakePlaylistSyncEngine())
 
         await viewModel.load()
         await viewModel.restorePlaylist(id: playlist.id)
@@ -100,7 +100,7 @@ final class PlaylistListViewModelTests: XCTestCase {
         )
 
         let repository = FakePlaylistRepository(active: [playlist], deleted: [])
-        let viewModel = PlaylistListViewModel(repository: repository)
+        let viewModel = PlaylistListViewModel(repository: repository, syncEngine: FakePlaylistSyncEngine())
 
         viewModel.beginRename(playlist: playlist)
 
@@ -119,7 +119,7 @@ final class PlaylistListViewModelTests: XCTestCase {
         )
 
         let repository = FakePlaylistRepository(active: [playlist], deleted: [])
-        let viewModel = PlaylistListViewModel(repository: repository)
+        let viewModel = PlaylistListViewModel(repository: repository, syncEngine: FakePlaylistSyncEngine())
 
         await viewModel.load()
         viewModel.beginRename(playlist: playlist)
@@ -151,7 +151,7 @@ final class PlaylistListViewModelTests: XCTestCase {
         )
 
         let repository = FakePlaylistRepository(active: [pending, synced], deleted: [])
-        let viewModel = PlaylistListViewModel(repository: repository)
+        let viewModel = PlaylistListViewModel(repository: repository, syncEngine: FakePlaylistSyncEngine())
 
         await viewModel.load()
 
@@ -171,7 +171,7 @@ final class PlaylistListViewModelTests: XCTestCase {
         )
 
         let repository = FakePlaylistRepository(active: [failed], deleted: [])
-        let viewModel = PlaylistListViewModel(repository: repository)
+        let viewModel = PlaylistListViewModel(repository: repository, syncEngine: FakePlaylistSyncEngine())
 
         await viewModel.load()
 
@@ -191,7 +191,7 @@ final class PlaylistListViewModelTests: XCTestCase {
         )
 
         let repository = FakePlaylistRepository(active: [synced], deleted: [])
-        let viewModel = PlaylistListViewModel(repository: repository)
+        let viewModel = PlaylistListViewModel(repository: repository, syncEngine: FakePlaylistSyncEngine())
 
         await viewModel.load()
 
@@ -272,5 +272,18 @@ private final class FakePlaylistRepository: PlaylistRepository {
         playlist.isDeleted = false
         playlist.updatedAt = Date()
         active.insert(playlist, at: 0)
+    }
+}
+
+private final class FakePlaylistSyncEngine: PlaylistSyncEngine {
+    var pendingCount: Int = 0
+    var failedCount: Int = 0
+
+    func enqueue(playlistID _: UUID, operation _: PlaylistSyncJob.Operation) async {
+        pendingCount += 1
+    }
+
+    func flush() async {
+        pendingCount = 0
     }
 }

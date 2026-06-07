@@ -12,10 +12,12 @@ final class PlaylistListViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let repository: any PlaylistRepository
+    private let syncEngine: any PlaylistSyncEngine
     private var editingPlaylistID: UUID?
 
-    init(repository: any PlaylistRepository) {
+    init(repository: any PlaylistRepository, syncEngine: (any PlaylistSyncEngine)? = nil) {
         self.repository = repository
+        self.syncEngine = syncEngine ?? MockPlaylistSyncEngine(repository: repository)
     }
 
     var pendingSyncCount: Int {
@@ -53,7 +55,9 @@ final class PlaylistListViewModel: ObservableObject {
         guard !trimmedName.isEmpty else { return }
 
         do {
-            _ = try await repository.createPlaylist(named: trimmedName)
+            let created = try await repository.createPlaylist(named: trimmedName)
+            await syncEngine.enqueue(playlistID: created.id, operation: .create)
+            await syncEngine.flush()
             newPlaylistName = ""
             isPresentingCreateSheet = false
             await load()
@@ -76,6 +80,8 @@ final class PlaylistListViewModel: ObservableObject {
 
         do {
             _ = try await repository.renamePlaylist(id: editingPlaylistID, name: trimmedName)
+            await syncEngine.enqueue(playlistID: editingPlaylistID, operation: .rename)
+            await syncEngine.flush()
             renamePlaylistName = ""
             isPresentingRenameSheet = false
             self.editingPlaylistID = nil
@@ -88,6 +94,8 @@ final class PlaylistListViewModel: ObservableObject {
     func softDeletePlaylist(id: UUID) async {
         do {
             try await repository.softDeletePlaylist(id: id)
+            await syncEngine.enqueue(playlistID: id, operation: .delete)
+            await syncEngine.flush()
             await load()
         } catch {
             errorMessage = "Failed to delete playlist."
@@ -97,6 +105,8 @@ final class PlaylistListViewModel: ObservableObject {
     func restorePlaylist(id: UUID) async {
         do {
             try await repository.restorePlaylist(id: id)
+            await syncEngine.enqueue(playlistID: id, operation: .restore)
+            await syncEngine.flush()
             await load()
         } catch {
             errorMessage = "Failed to restore playlist."

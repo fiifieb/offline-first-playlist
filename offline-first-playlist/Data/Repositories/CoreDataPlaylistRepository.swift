@@ -67,6 +67,15 @@ actor CoreDataPlaylistRepository: PlaylistRepository {
         }
     }
 
+    func setSyncState(id: UUID, syncState: SyncState) async throws {
+        try await perform {
+            let entity = try self.fetchEntity(id: id)
+            entity.syncStateRaw = syncState.rawValue
+            entity.updatedAt = Date()
+            try self.context.save()
+        }
+    }
+
     private func fetchPlaylists(isDeleted: Bool) async throws -> [Playlist] {
         try await perform {
             let request = PlaylistEntity.fetchRequest()
@@ -115,6 +124,17 @@ actor CoreDataPlaylistRepository: PlaylistRepository {
 }
 
 private extension SyncState {
+    var rawValue: String {
+        switch self {
+        case .pending:
+            return "pending"
+        case .synced:
+            return "synced"
+        case .failed:
+            return "failed"
+        }
+    }
+
     init(rawValue: String) {
         switch rawValue {
         case "synced":
