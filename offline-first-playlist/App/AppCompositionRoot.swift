@@ -7,6 +7,11 @@ struct AppCompositionRoot: View {
     init(environment: AppEnvironment) {
         self.environment = environment
         _viewModel = StateObject(wrappedValue: PlaylistListViewModel(repository: environment.playlistRepository))
+        #if DEBUG
+        Task {
+            await DebugSeed.seedIfEmpty(repository: environment.playlistRepository)
+        }
+        #endif
     }
 
     var body: some View {
