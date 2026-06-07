@@ -131,6 +131,74 @@ final class PlaylistListViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isPresentingRenameSheet)
         XCTAssertEqual(viewModel.renamePlaylistName, "")
     }
+
+    func testSyncStatusIsSyncingWhenPendingItemsExist() async throws {
+        let pending = Playlist(
+            id: UUID(),
+            name: "Pending",
+            isDeleted: false,
+            createdAt: Date(),
+            updatedAt: Date(),
+            syncState: .pending
+        )
+        let synced = Playlist(
+            id: UUID(),
+            name: "Synced",
+            isDeleted: false,
+            createdAt: Date(),
+            updatedAt: Date(),
+            syncState: .synced
+        )
+
+        let repository = FakePlaylistRepository(active: [pending, synced], deleted: [])
+        let viewModel = PlaylistListViewModel(repository: repository)
+
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.pendingSyncCount, 1)
+        XCTAssertEqual(viewModel.failedSyncCount, 0)
+        XCTAssertEqual(viewModel.syncStatusLabel, "Syncing...")
+    }
+
+    func testSyncStatusIsFailedWhenAnyFailedItemsExist() async throws {
+        let failed = Playlist(
+            id: UUID(),
+            name: "Failed",
+            isDeleted: false,
+            createdAt: Date(),
+            updatedAt: Date(),
+            syncState: .failed
+        )
+
+        let repository = FakePlaylistRepository(active: [failed], deleted: [])
+        let viewModel = PlaylistListViewModel(repository: repository)
+
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.pendingSyncCount, 0)
+        XCTAssertEqual(viewModel.failedSyncCount, 1)
+        XCTAssertEqual(viewModel.syncStatusLabel, "Sync failed")
+    }
+
+    func testSyncStatusIsUpToDateWhenNoPendingOrFailedItemsExist() async throws {
+        let synced = Playlist(
+            id: UUID(),
+            name: "Synced",
+            isDeleted: false,
+            createdAt: Date(),
+            updatedAt: Date(),
+            syncState: .synced
+        )
+
+        let repository = FakePlaylistRepository(active: [synced], deleted: [])
+        let viewModel = PlaylistListViewModel(repository: repository)
+
+        await viewModel.load()
+
+        XCTAssertEqual(viewModel.pendingSyncCount, 0)
+        XCTAssertEqual(viewModel.failedSyncCount, 0)
+        XCTAssertEqual(viewModel.syncStatusLabel, "Up to date")
+    }
 }
 
 private final class FakePlaylistRepository: PlaylistRepository {

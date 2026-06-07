@@ -18,6 +18,24 @@ final class PlaylistListViewModel: ObservableObject {
         self.repository = repository
     }
 
+    var pendingSyncCount: Int {
+        (activePlaylists + deletedPlaylists).filter { $0.syncState == .pending }.count
+    }
+
+    var failedSyncCount: Int {
+        (activePlaylists + deletedPlaylists).filter { $0.syncState == .failed }.count
+    }
+
+    var syncStatusLabel: String {
+        if failedSyncCount > 0 {
+            return "Sync failed"
+        }
+        if pendingSyncCount > 0 {
+            return "Syncing..."
+        }
+        return "Up to date"
+    }
+
     func load() async {
         do {
             async let active = repository.fetchActivePlaylists()

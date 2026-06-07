@@ -6,6 +6,17 @@ struct PlaylistListView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(viewModel.syncStatusLabel)
+                            .font(.headline)
+                        Text("Pending: \(viewModel.pendingSyncCount) • Failed: \(viewModel.failedSyncCount)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+
                 Section("Playlists") {
                     if viewModel.activePlaylists.isEmpty {
                         Text("No playlists yet")
